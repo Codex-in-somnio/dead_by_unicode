@@ -43,9 +43,10 @@ def num_key_press(digit): # 输入0x0到0xf的整型，'+'是加号
 	key_up(key_code, ext)
 	
 def do_hex_input(value):
-	print('Hex value: %02x' % value)
-	# alt: 0x12
+	print('Hex value: %04x' % value)
+	# l_alt: 0xa4
 	key_down(0xa4)
+	print('Pressing +')
 	num_key_press('+')
 	found_non_zero = False
 	for i in range(0, 4): 	# alt+unicode 最高支持16位
@@ -53,7 +54,7 @@ def do_hex_input(value):
 		if found_non_zero == False:
 			if digit == 0: continue
 			else: found_non_zero = True
-		print('Press digit %02x' % digit)
+		print('Pressing digit %1x' % digit)
 		num_key_press(digit)
 	key_up(0xa4)
 	
@@ -146,7 +147,7 @@ function xhrCallback(status, responseText) {
 }
 
 function setIsSending(flag) {
-	$("sendButton").prop("disabled", flag);
+	$("#sendButton").prop("disabled", flag);
 	isSending = flag;
 }
 
