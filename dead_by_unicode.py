@@ -61,8 +61,8 @@ def do_hex_input(value):
 def enter_string(str):
 	print("Received: " + str)
 	for c in str:
+		print("entering: " + c)
 		c_bytes = c.encode('utf-32-le')
-		print(c_bytes)
 		c_value = struct.unpack("<I", c_bytes)[0]
 		do_hex_input(c_value)
 
@@ -81,7 +81,6 @@ class RequestHandler(BaseHTTPRequestHandler):
 			self.wfile.write(html_content.encode("utf-8"))
 		elif path == "/send":
 			if "msg" in params.keys() and params["msg"] != "":
-				print(params["msg"][0])
 				enter_string(params["msg"][0])
 				self.send_response(200)
 				self.end_headers()
