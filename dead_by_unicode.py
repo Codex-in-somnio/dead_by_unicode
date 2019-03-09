@@ -108,11 +108,12 @@ class RequestHandler(BaseHTTPRequestHandler):
 		self.wfile.write(b"Error: Not Implemented")
 		
 def main():
-	global LISTEN_ADDR, LISTEN_PORT, KEY_DELAY
+	global LISTEN_ADDR, LISTEN_PORT, KEY_DELAY, DEBUG
 	parser = argparse.ArgumentParser(description="Dead By Unicode: 黎明杀机中文输入辅助工具")
 	parser.add_argument('-a', '--listen-address', metavar='ADDRESS', help="指定监听地址（默认值：%s）" % LISTEN_ADDR)
 	parser.add_argument('-p', '--listen-port', type=int, metavar='PORT', help="指定监听端口号（默认值：%d）" % LISTEN_PORT)	
 	parser.add_argument('-d', '--key-delay', type=int, metavar='DELAY', help="指定每次发送按键事件后加入的延时（毫秒，默认值：%d）" % KEY_DELAY)
+	parser.add_argument('-v', '--verbose', action='store_true', help='打印调试信息')
 	parsed_args = vars(parser.parse_args(sys.argv[1:]))
 	
 	listen_addr = parsed_args["listen_address"]
@@ -122,6 +123,8 @@ def main():
 	if listen_addr is not None: LISTEN_ADDR = listen_addr
 	if listen_port is not None: LISTEN_PORT = listen_port
 	if key_delay is not None: KEY_DELAY = key_delay
+	
+	if parsed_args["verbose"] == True: DEBUG = True
 	
 	print("Starting HTTP server at: %s:%s" % (LISTEN_ADDR, LISTEN_PORT))
 	httpd = HTTPServer((LISTEN_ADDR, LISTEN_PORT), RequestHandler)
