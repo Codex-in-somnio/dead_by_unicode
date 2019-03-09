@@ -10,7 +10,11 @@ from urllib.parse import parse_qs
 LISTEN_IP = "0.0.0.0"		# 监听地址
 LISTEN_PORT = 8081			# 监听端口号
 
-KEY_DELAY = 0.0002			# 按键延迟
+KEY_DELAY = 5			# 按键延迟
+DEBUG = False			# 打印调试信息
+
+def debug(msg):
+	if DEBUG: print(msg)
 
 def vkey_to_scan_code(key_code):
 	return ctypes.windll.user32.MapVirtualKeyA(key_code, 0)
@@ -19,15 +23,15 @@ def key_down(key_code, ext=False):
 	ext_flg = 1 if ext else 0
 	scan_code = vkey_to_scan_code(key_code)
 	ctypes.windll.user32.keybd_event(key_code, scan_code, ext_flg, 0)
-	print('Key Down: %02x' % key_code)
-	time.sleep(KEY_DELAY)
+	debug('Key Down: %02x' % key_code)
+	time.sleep(KEY_DELAY / 1000)
 	
 def key_up(key_code, ext=False):
 	ext_flg = 1 if ext else 0
 	scan_code = vkey_to_scan_code(key_code)
 	ctypes.windll.user32.keybd_event(key_code, scan_code, 2 | ext_flg, 0)
-	print('Key Up: %02x' % key_code)
-	time.sleep(KEY_DELAY)
+	debug('Key Up: %02x' % key_code)
+	time.sleep(KEY_DELAY / 1000)
 	
 def num_key_press(digit): # 输入0x0到0xf的整型，'+'是加号
 	key_code = 0
@@ -43,10 +47,10 @@ def num_key_press(digit): # 输入0x0到0xf的整型，'+'是加号
 	key_up(key_code, ext)
 	
 def do_hex_input(value):
-	print('Hex value: %04x' % value)
+	debug('Hex value: %04x' % value)
 	# l_alt: 0xa4
 	key_down(0xa4)
-	print('Pressing +')
+	debug('Pressing +')
 	num_key_press('+')
 	found_non_zero = False
 	for i in range(0, 4): 	# alt+unicode 最高支持16位
@@ -54,18 +58,22 @@ def do_hex_input(value):
 		if found_non_zero == False:
 			if digit == 0: continue
 			else: found_non_zero = True
-		print('Pressing digit %1x' % digit)
+		debug('Pressing digit %1x' % digit)
 		num_key_press(digit)
 	key_up(0xa4)
 	
 def enter_string(str):
-	print("Received: " + str)
+	debug("Received: " + str)
 	for c in str:
-		print("entering: " + c)
-		c_bytes = c.encode('utf-32-le')
-		c_value = struct.unpack("<I", c_bytes)[0]
-		do_hex_input(c_value)
-
+		if c == "\n":
+			debug("pressing enter")
+			key_down(0x0d)
+			key_up(0x0d)
+		else:
+			debug("entering: " + c)
+			c_bytes = c.encode('utf-32-le')
+			c_value = struct.unpack("<I", c_bytes)[0]
+			do_hex_input(c_value)
 		
 class RequestHandler(BaseHTTPRequestHandler):
 	def do_GET(self):
@@ -84,7 +92,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 				enter_string(params["msg"][0])
 				self.send_response(200)
 				self.end_headers()
-				self.wfile.write(b"Sent: " + params["msg"][0].encode("utf-8"))
+				self.wfile.write(b"Sent: " + params["msg"][0].replace("\n", "⏎").encode("utf-8"))
 			else:
 				self.send_response(400)
 				self.end_headers()
@@ -103,7 +111,7 @@ def main():
 	httpd = HTTPServer((LISTEN_IP, LISTEN_PORT), RequestHandler)
 	httpd.serve_forever()
 
-html_content = """
+html_content = r"""
 <!doctype html>
 <html>
 <head>
@@ -117,13 +125,20 @@ html_content = """
 <body style="font-family: 微软雅黑, sans-serif">
 <div class="container">
 <h1>发送文本</h1>
-<form onsubmit="sendMsg(); return false">
+<form onsubmit="submitForm(); return false">
 	<div class="form-group">
 		<label for="msg">文本内容</label>
 		<input id="msg" placeholder="内容" size="40" autocomplete="off">
 	</div>
+	<div class="form-check">
+		<input class="form-check-input" type="checkbox" value="" id="followByEnter">
+		<label class="form-check-label" for="followByEnter">
+			自动发送回车
+		</label>
+	</div>
 	<button id="sendButton" type="submit" class="btn btn-default">发送</button>
 	<button type="button" onclick="clearMsg()" class="btn btn-default">清除待发消息</button>
+	<button id="sendEnterButton" type="button" onclick="sendEnter()" class="btn btn-default">发送回车</button>
 </form>
 <div id="status"></div>
 </div>
@@ -147,6 +162,7 @@ function xhrCallback(status, responseText) {
 
 function setIsSending(flag) {
 	$("#sendButton").prop("disabled", flag);
+	$("#sendEnterButton").prop("disabled", flag);
 	isSending = flag;
 }
 
@@ -155,19 +171,24 @@ function setFocus() {
 	$("#msg").delay(1).select();
 }
 
-function sendMsg() {
+var timePerChar = %%%TIME_PER_CHAR%%%
+function sendMsg(msg) {
 	if (isSending) {
 		updateStatus("有消息正在发送。");
 		return;
 	}
-	var msg = $("#msg").val();
+	if (msg == "")
+	{
+		updateStatus("待发消息为空。");
+		return;
+	}
 	console.log("Sending: " + msg);
 	var url = "/send?msg=" + msg;
     var xhr = new XMLHttpRequest();
     xhr.onload = function(){ xhrCallback(xhr.status, xhr.responseText) };
     xhr.onerror = function(){ updateStatus("发生了错误。") };
 	xhr.ontimeout = xhrTimeout;
-	xhr.timeout = 20000;
+	xhr.timeout = timePerChar * msg.length + 10000;
     xhr.open("GET", encodeURI(url), true);
 	xhr.send(null);
 	setIsSending(true);
@@ -175,14 +196,24 @@ function sendMsg() {
 	setFocus();
 }
 
+function submitForm() {
+	var msg = $("#msg").val();
+	if ($('#followByEnter').prop('checked')) msg +=	"\n";
+	sendMsg(msg);
+}
+
 function clearMsg() {
 	$("#msg").val("");
 	setFocus();
 }
+
+function sendEnter() {
+	sendMsg("\n");
+}
 </script>
 </body>
 </html>
-"""
+""".replace("%%%TIME_PER_CHAR%%%", str(KEY_DELAY * 12))
 
 if __name__ == "__main__":
 	main()
