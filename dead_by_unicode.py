@@ -6,8 +6,9 @@ import time
 import struct
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import parse_qs
+import argparse, sys
 
-LISTEN_IP = "0.0.0.0"		# 监听地址
+LISTEN_ADDR = "0.0.0.0"		# 监听地址
 LISTEN_PORT = 8081			# 监听端口号
 
 KEY_DELAY = 5			# 按键延迟
@@ -107,8 +108,23 @@ class RequestHandler(BaseHTTPRequestHandler):
 		self.wfile.write(b"Error: Not Implemented")
 		
 def main():
-	print("Starting HTTP server at: %s:%s" % (LISTEN_IP, LISTEN_PORT))
-	httpd = HTTPServer((LISTEN_IP, LISTEN_PORT), RequestHandler)
+	global LISTEN_ADDR, LISTEN_PORT, KEY_DELAY
+	parser = argparse.ArgumentParser(description="Dead By Unicode: 黎明杀机中文输入辅助工具")
+	parser.add_argument('-a', '--listen-address', metavar='ADDRESS', help="指定监听地址（默认值：%s）" % LISTEN_ADDR)
+	parser.add_argument('-p', '--listen-port', type=int, metavar='PORT', help="指定监听端口号（默认值：%d）" % LISTEN_PORT)	
+	parser.add_argument('-d', '--key-delay', type=int, metavar='DELAY', help="指定每次发送按键事件后加入的延时（毫秒，默认值：%d）" % KEY_DELAY)
+	parsed_args = vars(parser.parse_args(sys.argv[1:]))
+	
+	listen_addr = parsed_args["listen_address"]
+	listen_port = parsed_args["listen_port"]
+	key_delay = parsed_args["key_delay"]
+	
+	if listen_addr is not None: LISTEN_ADDR = listen_addr
+	if listen_port is not None: LISTEN_PORT = listen_port
+	if key_delay is not None: KEY_DELAY = key_delay
+	
+	print("Starting HTTP server at: %s:%s" % (LISTEN_ADDR, LISTEN_PORT))
+	httpd = HTTPServer((LISTEN_ADDR, LISTEN_PORT), RequestHandler)
 	httpd.serve_forever()
 
 html_content = r"""
