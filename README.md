@@ -28,10 +28,14 @@
 * `-v`或`--verbose`：打印调试信息。
 
 ## 用py2exe构建exe
-```
-build_exe dead_by_unicode.py -b 0
-```
 https://pypi.org/project/py2exe/
+
+注意不支持最新版本的Python，需要用3.3或3.4。
+
+```
+py -3.4 -m pip install py2exe
+py -3.4 -m py2exe dead_by_unicode.py -b 0
+```
 
 ## Todo
 * 加入访问权限控制；
