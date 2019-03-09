@@ -27,6 +27,12 @@
 * `-d <延时时间>`或`--key-delay <延时时间>`：指定每次按键事件后加入的延时（毫秒）；
 * `-v`或`--verbose`：打印调试信息。
 
+## 用py2exe构建exe
+```
+build_exe dead_by_unicode.py -b 0
+```
+https://pypi.org/project/py2exe/
+
 ## Todo
 * 加入访问权限控制；
 * 用二维码自动输出URL；
