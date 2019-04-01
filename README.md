@@ -1,7 +1,8 @@
 # Dead By Unicode
-**此工具还在开发中，目前仅供测试用。**
 
 ![Demo](https://github.com/k9yyy/dead_by_unicode/blob/master/resources/dbu_demo.jpg?raw=true)
+
+**此项目已被[Dead By Unicode GUI](https://github.com/k9yyy/dead_by_unicode_gui)替代。**
 
 ## 介绍
 这是一个开发中的用于黎明杀机中文聊天的辅助工具。原理是通过HTTP请求接收文本，然后发送按键事件模拟键盘按下Alt{+Unicode}来输入每个字符。
@@ -44,9 +45,3 @@ https://pypi.org/project/py2exe/
 py -3.4 -m pip install py2exe
 py -3.4 -m py2exe dead_by_unicode.py -b 0
 ```
-
-## Todo
-* 加入访问权限控制；
-* 用二维码自动输出URL；
-* 加入输入内容验证；
-* 考虑开发GUI版，以及用远程服务器中转的功能。
